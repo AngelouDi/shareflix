@@ -47,8 +47,7 @@ parser.add_argument(
     '--loopback', 
     default=1, 
     type=int,
-    help='Add more audio sources to stream (such as mic).'
-    )
+    help='Add more audio sources to stream (such as mic).')
 parser.add_argument(
     '--flip',
     action='store_true',
@@ -68,38 +67,42 @@ def setup_modprobe(video_nr, label):
 def start_stream(path, port):
     path = shlex.quote(path)
     return os.system(f'vlc {path} --sout="#rtp{{sdp=rtsp://:{port}/}}"')
-def view_stream(port):
-    return os.system(f'ffplay rtsp://localhost:{port}/')
+def view_stream(video_nr):
+    return os.system(f'ffplay /dev/video{video_nr}')
 def direct_to_video(port, width, video_nr):
     return os.system(f'ffmpeg -i rtsp://localhost:{port}/ -f v4l2 -vf "hflip,format=yuv420p,scale=-1:{width}" /dev/video{video_nr}')
 def clear_audio():
     interfaces = [x.split('\t')[0] for x in os.popen('pactl list short | grep ShareFlix').read().split('\n')][:-1]
     for interface in interfaces:
-        os.system(f'sudo pactl unload-module {interface}')
+        print(interface)
+        os.system(f'pactl unload-module {interface}')
 
 
 def direct_audio(port):
-    source = os.popen('pactl get-default-source').read()
-    os.system(f'PULSE_SINK=@DEFAULT_SINK@ ffmpeg -i /dev/video1 -f pulse "ShareFlix-audio"')
-
-
+    os.system(f'pactl load-module module-null-sink sink_name="ShareFlix_combined_sink" sink_properties=device.description="ShareFlix_combined_sink_desc"')
+    os.system(f'pactl load-module module-null-sink sink_name="ShareFlix_movie_sink" sink_properties=device.description="ShareFlix_movie_sink_desc"')
+    if args.mic:
+        os.system(f'pactl load-module module-loopback source=@DEFAULT_SOURCE@ sink=ShareFlix_combined_sink latency_msec=4 sink_properties=device.description="ShareFlix_mic_loopback"')
+    os.system(f'pactl load-module module-loopback source=ShareFlix_movie_sink.monitor sink=ShareFlix_combined_sink latency_msec=10 sink_properties=device.description="ShareFlix_movie_loopback"')
+    os.system(f'pactl load-module module-remap-source master="ShareFlix_combined_sink.monitor" source_name="ShareFlix_source" source_properties=device.description="ShareFlix"')
+    os.system(f'PULSE_SINK=ShareFlix_movie_sink ffmpeg -i rtsp://:{port}/ -f pulse "ShareFlix-audio"')
 
 
 if setup_modprobe(args.loopback, args.name) != 0:
     sys.exit('Failed to setup v4l2loopback')
 stream = mp.Process(target=start_stream, args=(args.input, args.port)).start()
 time.sleep(1)
-#player = mp.Process(target=view_stream, args=(args.port,)).start()
-#video_loopback = mp.Process(target=direct_to_video, args=(args.port, args.width, args.loopback)).start()
+video_loopback = mp.Process(target=direct_to_video, args=(args.port, args.width, args.loopback)).start()
 clear_audio()
-#direct_audio = mp.Process(target=direct_audio, args=(args.port, )).start()
+direct_audio = mp.Process(target=direct_audio, args=(args.port, )).start()
+player = mp.Process(target=view_stream, args=(args.video_nr,)).start()
 
 #TODO: check if path exists
 #TODO: if stream fails exit
 
-stream.join()
+#stream.join()
 #player.join()
-#video_loopback.join()
+#kkkvideo_loopback.join()
 
 #https://askubuntu.com/questions/1295430/how-do-i-mix-together-a-real-microphone-input-and-a-virtual-microphone-using-pul
 
