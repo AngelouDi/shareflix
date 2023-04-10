@@ -63,7 +63,7 @@ def main():
         '--source', 
         default="@DEFAULT_SOURCE@", 
         type=str,
-        help='Define specific audio source for microphone. (pactl list source short)')
+        help='Define specific audio source for microphone. (pactl list sources short)')
 
     args = parser.parse_args()
 

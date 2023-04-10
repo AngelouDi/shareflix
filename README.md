@@ -30,7 +30,7 @@ options:
   --flip                Mirror the screen horizontally.
   --mic                 Pass sound from microphone.
   -s SOURCE, --source SOURCE
-                        Define specific audio source for microphone. (pactl list source short)
+                        Define specific audio source for microphone. (pactl list sources short)
 
 Stream only legal linux.iso's!
 ```	
@@ -40,7 +40,7 @@ The simplest way of running ShareFlix is:
 
 If you want to flip the screen you can use the `--flip` flag.
 
-You can pass your microphone audio to the stream by using `--mic` and optionally select a different source as given by `pactl list source short` by passing it to `-s` argument.
+You can pass your microphone audio to the stream by using `--mic` and optionally select a different source as given by `pactl list sources short` by passing it to `-s` argument.
 
 If `/dev/video1` is already occupied you can select a different number using `-l` flag.
 
