@@ -39,12 +39,6 @@ def main():
         help='Port of stream',
         default=8554)
     parser.add_argument(
-        '-n',
-        '--name',
-        default='ShareFlix',
-        type=str,
-        help='Name of virtual camera')
-    parser.add_argument(
         '-w',
         '--width',
         default=720,
@@ -73,7 +67,7 @@ def main():
 
     args = parser.parse_args()
 
-    if setup_modprobe(args.loopback, args.name) != 0:
+    if setup_modprobe(args.loopback) != 0:
         sys.exit('Failed to setup v4l2loopback')
     stream = mp.Process(target=start_stream, args=(args.input, args.port)).start()
     time.sleep(1)
