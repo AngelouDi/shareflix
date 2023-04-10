@@ -17,6 +17,9 @@ if not which('vlc'):
     parser.exit(1, message='vlc is not installed')
 if not which('ffmpeg'):
     parser.exit(1, message='ffmpeg is not installed')
+if not which('pactl'):
+    parser.exit(1, message='pactl is not installed')
+
 
 parser.add_argument(
     '-i',
@@ -51,13 +54,17 @@ parser.add_argument(
 parser.add_argument(
     '--flip',
     action='store_true',
-    help='Mirror the screen horizontally.'
-)
+    help='Mirror the screen horizontally.')
 parser.add_argument(
     '--mic',
     action='store_true',
-    help='Pass sound from the default microphone.'
-    )
+    help='Pass sound from microphone.')
+parser.add_argument(
+    '-s', 
+    '--source', 
+    default="@DEFAULT_SOURCE@", 
+    type=str,
+    help='Define specific audio source for microphone. (pactl list source short)')
 
 args = parser.parse_args()
 
@@ -78,11 +85,11 @@ def clear_audio():
         os.system(f'pactl unload-module {interface}')
 
 
-def direct_audio(port):
+def direct_audio(port, audio_source):
     os.system(f'pactl load-module module-null-sink sink_name="ShareFlix_combined_sink" sink_properties=device.description="ShareFlix_combined_sink_desc"')
     os.system(f'pactl load-module module-null-sink sink_name="ShareFlix_movie_sink" sink_properties=device.description="ShareFlix_movie_sink_desc"')
     if args.mic:
-        os.system(f'pactl load-module module-loopback source=@DEFAULT_SOURCE@ sink=ShareFlix_combined_sink latency_msec=4 sink_properties=device.description="ShareFlix_mic_loopback"')
+        os.system(f'pactl load-module module-loopback source={audio_source} sink=ShareFlix_combined_sink latency_msec=4 sink_properties=device.description="ShareFlix_mic_loopback"')
     os.system(f'pactl load-module module-loopback source=ShareFlix_movie_sink.monitor sink=ShareFlix_combined_sink latency_msec=10 sink_properties=device.description="ShareFlix_movie_loopback"')
     os.system(f'pactl load-module module-remap-source master="ShareFlix_combined_sink.monitor" source_name="ShareFlix_source" source_properties=device.description="ShareFlix"')
     os.system(f'PULSE_SINK=ShareFlix_movie_sink ffmpeg -i rtsp://:{port}/ -f pulse "ShareFlix-audio"')
@@ -94,7 +101,7 @@ stream = mp.Process(target=start_stream, args=(args.input, args.port)).start()
 time.sleep(1)
 video_loopback = mp.Process(target=direct_to_video, args=(args.port, args.width, args.loopback)).start()
 clear_audio()
-direct_audio = mp.Process(target=direct_audio, args=(args.port, )).start()
+direct_audio = mp.Process(target=direct_audio, args=(args.port, args.source)).start()
 player = mp.Process(target=view_stream, args=(args.video_nr,)).start()
 
 #TODO: check if path exists
