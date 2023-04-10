@@ -6,9 +6,7 @@ It uses `v4l2loopback`, `pulseaudio` and `ffmpeg` to create virtual video and au
 - pulse compatible drivers (pactl)
 - ffmpeg
 - python 3
-
-Install python requirements with: `pip install -m requirements.txt`
-
+- vlc
 ## Usage
 ```
 .▄▄ ·  ▄ .▄ ▄▄▄· ▄▄▄  ▄▄▄ .·▄▄▄▄▄▌  ▪  ▐▄• ▄ 
